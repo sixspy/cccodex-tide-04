@@ -46,7 +46,7 @@
         <div class="工具"><button class="按钮" id="跑">跑窗贯验</button> <span id="果"></span></div>
         <div class="表绕"><table><thead><tr><th>时刻</th><th>缓冲笔数</th><th>切片笔数</th><th>迟到笔数</th><th>是否对齐</th><th>说明</th></tr></thead><tbody id="表"></tbody></table></div>
       </section>
-      <section class="卷"><p class="说明">贯验只认事件数互证，不认墙钟快慢。</p></section>
+      <section class="卷"><p class="说明">贯验只认事件数互证，不认墙钟快慢。迟到只进旁路、不计入切片口径，故不误伤；但迟到匣/旁路凭证/只读归档三表互证损坏时，说明列会报旁路撕裂。</p></section>
       <script>
       async function 刷() {
         const rows = await 潮切.getJSON("/api/窗贯验");

@@ -68,6 +68,8 @@
       <section class="卷">
         <h2>水位</h2>
         <div class="水位" id="水位"></div>
+        <h2 style="margin-top:14px">迟到旁路保留卡片</h2>
+        <p class="说明" id="旁路卡">加载旁路策略…</p>
         <div class="工具">
           <button class="按钮" id="灌成片">灌窗内成片样例</button>
           <button class="按钮 次" id="灌迟到">灌迟到样例</button>
@@ -83,6 +85,10 @@
         document.getElementById("尺起").textContent = (r["窗起"] || "窗起").slice(11, 16) || "窗起";
         document.getElementById("尺止").textContent = (r["窗止"] || "窗止").slice(11, 16) || "窗止";
         潮切.渲染水位(document.getElementById("水位"), o);
+        const b = await 潮切.getJSON("/api/迟到旁路保留");
+        const s = b["策略"] || {};
+        document.getElementById("旁路卡").textContent =
+          `策略「${s["空桩"] || "?"}」· ${s["保留形态"] || "?"} · 旁路条目 ${(b["条目"] || []).length} 笔 · 迟到只进旁路不计切片，三写同事务同成败`;
       }
       async function 跑(fn) {
         const el = document.getElementById("回执");

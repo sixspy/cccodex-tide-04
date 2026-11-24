@@ -19,7 +19,9 @@ CREATE TABLE IF NOT EXISTS 观测点 (
   事件时 TEXT NOT NULL,
   处理时 TEXT NOT NULL,
   命运 TEXT NOT NULL DEFAULT '已装载',
-  批次编号 TEXT NOT NULL DEFAULT ''
+  批次编号 TEXT NOT NULL DEFAULT '',
+  旁路保留 TEXT NOT NULL DEFAULT '',
+  旁路有效 INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS 入窗缓冲 (
   事件编号 TEXT PRIMARY KEY,
@@ -46,7 +48,27 @@ CREATE TABLE IF NOT EXISTS 迟到匣 (
   运单键 TEXT NOT NULL,
   原因 TEXT NOT NULL,
   事件时 TEXT NOT NULL,
+  入匣时 TEXT NOT NULL,
+  旁路标签 TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE IF NOT EXISTS 旁路凭证 (
+  凭证键 TEXT PRIMARY KEY,
+  事件编号 TEXT NOT NULL UNIQUE,
+  运单键 TEXT NOT NULL,
+  原事件时 TEXT NOT NULL,
+  归档键 TEXT NOT NULL,
+  窗号 TEXT NOT NULL DEFAULT '',
+  保留形态 TEXT NOT NULL DEFAULT '形态乙-双写两轨',
+  valid INTEGER NOT NULL DEFAULT 1,
   入匣时 TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS 旁路归档 (
+  归档键 TEXT PRIMARY KEY,
+  事件编号 TEXT NOT NULL,
+  原事件时 TEXT NOT NULL,
+  事件原文 TEXT NOT NULL,
+  只读 INTEGER NOT NULL DEFAULT 1,
+  归档时 TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS 窗贯验 (
   编号 INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,9 +101,22 @@ def 此刻() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+def _补列(conn) -> None:
+    """老库平滑加列；新库建表已含，跳过。"""
+    现有 = {r["name"] for r in conn.execute("PRAGMA table_info(观测点)").fetchall()}
+    if "旁路保留" not in 现有:
+        conn.execute("ALTER TABLE 观测点 ADD COLUMN 旁路保留 TEXT NOT NULL DEFAULT ''")
+    if "旁路有效" not in 现有:
+        conn.execute("ALTER TABLE 观测点 ADD COLUMN 旁路有效 INTEGER NOT NULL DEFAULT 0")
+    现有 = {r["name"] for r in conn.execute("PRAGMA table_info(迟到匣)").fetchall()}
+    if "旁路标签" not in 现有:
+        conn.execute("ALTER TABLE 迟到匣 ADD COLUMN 旁路标签 TEXT NOT NULL DEFAULT ''")
+
+
 def 初始化库() -> None:
     conn = 连接()
     conn.executescript(建表)
+    _补列(conn)
     if conn.execute("SELECT COUNT(*) AS c FROM 窗规").fetchone()["c"] == 0:
         for k, v in {
             "窗长秒": "3600",

@@ -49,8 +49,10 @@
       <section class="卷">
         <h2>空桩目录</h2>
         <p class="说明" id="空桩"></p>
+        <h2 style="margin-top:12px">当前迟到旁路保留策略</h2>
+        <pre class="回执" id="策略">加载中…</pre>
         <div class="双栏">
-          <p class="说明">窗规钉死当前窗。改时钟漂移属于空桩，不在基线默认路径。</p>
+          <p class="说明">窗规钉死当前窗。出窗事件按当前旁路策略处理：迟到匣摘要 + 凭证冻原事件时 + 只读归档，升格回放读凭证表。</p>
           <div class="侧注">子方向：采集入库编排。行业皮：物流网点轨迹。去皮：事件时关窗管道。</div>
         </div>
       </section>
@@ -59,6 +61,8 @@
         document.getElementById("规").textContent = JSON.stringify(await 潮切.getJSON("/api/窗规"), null, 2);
         const s = await 潮切.getJSON("/api/空桩");
         document.getElementById("空桩").textContent = "空桩 " + s.条数 + "：" + (s.空桩 || []).join(" · ");
+        const b = await 潮切.getJSON("/api/迟到旁路保留");
+        document.getElementById("策略").textContent = JSON.stringify(b["策略"] || {}, null, 2);
       })();
       </script>
 

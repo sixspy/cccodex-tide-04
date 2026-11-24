@@ -3,6 +3,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from pathlib import Path
 from app.services import 目录, 装载, 关窗, 贯验, 夹具, 统计, 说明
+from app.modules import 迟到旁路保留
 
 
 async def api_概览(request: Request):
@@ -40,6 +41,11 @@ async def api_切片(request: Request):
 
 async def api_迟到(request: Request):
     return JSONResponse(目录.迟到列表())
+
+
+async def api_迟到旁路保留(request: Request):
+    """新增旁路保留只读接口：策略 + 条目（事件编号/原事件时/凭证或归档键/valid）。"""
+    return JSONResponse(迟到旁路保留.旁路列表())
 
 
 async def api_贯验列表(request: Request):
@@ -99,6 +105,7 @@ async def api_空桩(request: Request):
     Route("/api/入窗缓冲", api_缓冲),
     Route("/api/窗切片账", api_切片),
     Route("/api/迟到匣", api_迟到),
+    Route("/api/迟到旁路保留", api_迟到旁路保留),
     Route("/api/窗贯验", api_贯验列表),
     Route("/api/夹具", api_夹具),
     Route("/api/观测点/装载", api_装载, methods=["POST"]),

@@ -43,16 +43,40 @@
       </header>
 
       <section class="卷">
-        <div class="表绕"><table><thead><tr><th>编号</th><th>事件编号</th><th>运单键</th><th>原因</th><th>事件时</th></tr></thead><tbody id="表"></tbody></table></div>
+        <h2>旁路保留策略</h2>
+        <p class="说明" id="策略">加载中…</p>
       </section>
-      <section class="卷"><div class="双栏"><p class="说明">迟到匣吃出窗事件。空桩「迟到升格回放」可再开，基线只保留旁路。</p><div class="侧注">行业皮：物流网点。拓扑：单流入窗，不是双轨。</div></div></section>
+      <section class="卷">
+        <h2>迟到匣摘要（双写两轨·形态乙）</h2>
+        <p class="说明">迟到匣只留一行摘要；原事件时冻在旁路凭证，完整事件进只读归档包，两键不同、回读可区分。</p>
+        <div class="表绕"><table><thead><tr><th>编号</th><th>事件编号</th><th>运单键</th><th>原因</th><th>原事件时</th><th>旁路标签</th></tr></thead><tbody id="表"></tbody></table></div>
+      </section>
+      <section class="卷">
+        <h2>旁路凭证与只读归档（只读接口回读）</h2>
+        <p class="说明">字段：事件编号、原事件时、凭证或归档键、valid。凭证供后续升格回放对窗，归档包留事件原文。</p>
+        <div class="表绕"><table><thead><tr><th>事件编号</th><th>原事件时</th><th>凭证键</th><th>归档键</th><th>valid</th><th>入匣时</th></tr></thead><tbody id="旁路表"></tbody></table></div>
+      </section>
+      <section class="卷"><div class="双栏"><p class="说明">迟到匣吃出窗事件。空桩「迟到升格回放」改读旁路凭证表对窗，不读迟到匣摘要。</p><div class="侧注">行业皮：物流网点。拓扑：单流入窗，不是双轨。</div></div></section>
       <script>
       (async () => {
         const rows = await 潮切.getJSON("/api/迟到匣");
         const tb = document.getElementById("表");
-        if (!rows.length) { tb.innerHTML = `<tr><td colspan="5">${潮切.空态("迟到匣为空。回潮切台灌迟到样例。")}</td></tr>`; return; }
+        if (!rows.length) { tb.innerHTML = `<tr><td colspan="6">${潮切.空态("迟到匣为空。回潮切台灌迟到样例。")}</td></tr>`; }
         for (const r of rows) {
-          tb.appendChild(潮切.行(`<td>${r.编号}</td><td>${潮切.安全文本(r.事件编号)}</td><td>${潮切.安全文本(r.运单键)}</td><td>${潮切.徽章(r.原因,"警")}</td><td>${潮切.安全文本(r.事件时)}</td>`));
+          const 标签 = r.旁路标签 ? 潮切.徽章(r.旁路标签, "警") : 潮切.徽章("基线无标签", "");
+          tb.appendChild(潮切.行(`<td>${r.编号}</td><td>${潮切.安全文本(r.事件编号)}</td><td>${潮切.安全文本(r.运单键)}</td><td>${潮切.徽章(r.原因,"警")}</td><td>${潮切.安全文本(r.事件时)}</td><td>${标签}</td>`));
+        }
+
+        const 体 = await 潮切.getJSON("/api/迟到旁路保留");
+        const s = 体["策略"] || {};
+        document.getElementById("策略").textContent =
+          `策略：${s["空桩"] || "?"} · 形态：${s["保留形态"] || "?"} · ${s["说明"] || ""}`;
+        const pb = document.getElementById("旁路表");
+        const 条目 = 体["条目"] || [];
+        if (!条目.length) { pb.innerHTML = `<tr><td colspan="6">${潮切.空态("尚无旁路凭证。迟到事件装载后自动三写。")}</td></tr>`; }
+        for (const r of 条目) {
+          const valid = r.valid ? 潮切.徽章("valid=1", "好") : 潮切.徽章("valid=0", "危");
+          pb.appendChild(潮切.行(`<td>${潮切.安全文本(r.事件编号)}</td><td>${潮切.安全文本(r.原事件时)}</td><td>${潮切.安全文本(r.凭证键)}</td><td>${潮切.安全文本(r.归档键)}</td><td>${valid}</td><td>${潮切.安全文本(r.入匣时)}</td>`));
         }
       })();
       </script>

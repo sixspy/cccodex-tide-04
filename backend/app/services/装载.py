@@ -4,6 +4,7 @@ import json
 import uuid
 from app.db import 连接
 from app.seed import 此刻
+from app.modules import 迟到旁路保留
 from app.services import 校验, 目录, 时间
 
 
@@ -47,14 +48,22 @@ def 装一批(体: dict) -> dict:
                 报告["入缓冲"] += 1
                 报告["明细"].append({"命运": "入缓冲", "事件编号": 编号, "窗号": 窗号})
             else:
+                # 出窗：迟到旁路保留（形态乙）三写——与观测命运同一连接同一事务，
+                # 任一写失败整体回滚；凭证表事件编号 UNIQUE 挡同号并发双匣。
+                键 = 迟到旁路保留.写旁路(conn, ev, 处理, 窗号)
                 conn.execute(
-                    """INSERT INTO 迟到匣(事件编号,运单键,原因,事件时,入匣时)
-                       VALUES (?,?,?,?,?)""",
-                    (编号, ev["运单键"], "事件时出窗", ev["事件时"], 处理),
+                    """UPDATE 观测点
+                       SET 命运=?, 旁路保留=?, 旁路有效=1 WHERE 事件编号=?""",
+                    ("已迟到", 迟到旁路保留.保留形态名, 编号),
                 )
-                conn.execute("UPDATE 观测点 SET 命运=? WHERE 事件编号=?", ("已迟到", 编号))
                 报告["迟到"] += 1
-                报告["明细"].append({"命运": "迟到", "事件编号": 编号})
+                报告["明细"].append({
+                    "命运": "迟到",
+                    "事件编号": 编号,
+                    "旁路标签": 迟到旁路保留.保留形态名,
+                    "凭证键": 键["凭证键"],
+                    "归档键": 键["归档键"],
+                })
         conn.execute(
             """INSERT INTO 装载批次(编号,时刻,入流,入缓冲,迟到,报告) VALUES (?,?,?,?,?,?)""",
             (批次, 此刻(), 报告["入流"], 报告["入缓冲"], 报告["迟到"], json.dumps(报告, ensure_ascii=False)),
